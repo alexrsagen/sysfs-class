@@ -115,6 +115,10 @@ impl Block {
 
     // device
 
+    method!("device/address", device_address read_file String);
+
+    method!("device/firmware_rev", device_firmware_rev read_file String);
+
     method!("device/device_blocked", device_blocked parse_file u8);
 
     method!("device/device_busy", device_busy parse_file u8);
@@ -126,6 +130,10 @@ impl Block {
     method!("device/state", device_state read_file String);
 
     method!("device/vendor", device_vendor read_file String);
+
+    method!("device/serial", device_serial read_file String);
+
+    method!("device/transport", device_transport read_file String);
 
     // dm
 
