@@ -127,6 +127,18 @@ impl Block {
 
     method!("device/vendor", device_vendor read_file String);
 
+    // dm
+
+    method!("dm/name", dm_name read_file String);
+
+    method!("dm/rq_based_seq_io_merge_deadline", dm_rq_based_seq_io_merge_deadline parse_file u64);
+
+    method!("dm/suspended", dm_suspended parse_file u8);
+
+    method!("dm/use_blk_mq", dm_use_blk_mq parse_file u8);
+
+    method!("dm/uuid", dm_uuid read_file String);
+
     // holders
 
     // integrity
