@@ -106,6 +106,21 @@ impl FromStr for ScsiDeviceType {
     }
 }
 
+#[derive(Clone, Default, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+pub enum BlockDeviceType {
+    DeviceMapper,
+    StorageDevice,
+    Nvme,
+    Loop,
+    MultipleDevice,
+    Partition,
+    RamDisk,
+    CompressedRamDisk,
+    Scsi(ScsiDeviceType),
+    #[default]
+    Unknown,
+}
+
 /// A block device in /sys/class/block
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct Block {
@@ -129,6 +144,45 @@ impl SysClass for Block {
 impl Block {
     pub fn has_device(&self) -> bool {
         self.path.join("device").exists()
+    }
+
+    pub fn device_type(&self) -> BlockDeviceType {
+        let name = self.path.file_name().map(|name| name.to_str()).flatten();
+        if self.partition().is_ok() {
+            BlockDeviceType::Partition
+        } else if name.is_some_and(|name| {
+            name.starts_with("dm-") && name.chars().nth(3).is_some_and(|c| c.is_ascii_digit())
+        }) {
+            BlockDeviceType::DeviceMapper
+        } else if name.is_some_and(|name| {
+            name.starts_with("loop") && name.chars().nth(4).is_some_and(|c| c.is_ascii_digit())
+        }) {
+            BlockDeviceType::Loop
+        } else if name.is_some_and(|name| {
+            name.starts_with("md") && name.chars().nth(2).is_some_and(|c| c.is_ascii_digit())
+        }) {
+            BlockDeviceType::MultipleDevice
+        } else if name.is_some_and(|name| {
+            name.starts_with("nvme") && name.chars().nth(4).is_some_and(|c| c.is_ascii_digit())
+        }) {
+            BlockDeviceType::Nvme
+        } else if name.is_some_and(|name| {
+            name.starts_with("ram") && name.chars().nth(3).is_some_and(|c| c.is_ascii_digit())
+        }) {
+            BlockDeviceType::RamDisk
+        } else if name.is_some_and(|name| {
+            name.starts_with("zram") && name.chars().nth(4).is_some_and(|c| c.is_ascii_digit())
+        }) {
+            BlockDeviceType::CompressedRamDisk
+        } else if let Ok(scsi_device_type) = self.device_type_scsi() {
+            BlockDeviceType::Scsi(scsi_device_type)
+        } else if name.is_some_and(|name| {
+            name.starts_with("sd") && name.chars().nth(2).is_some_and(|c| c.is_ascii_alphabetic())
+        }) {
+            BlockDeviceType::StorageDevice
+        } else {
+            BlockDeviceType::Unknown
+        }
     }
 
     pub fn children(&self) -> Result<Vec<Self>> {
