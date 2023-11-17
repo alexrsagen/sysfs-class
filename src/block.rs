@@ -1,8 +1,110 @@
 use crate::SysClass;
 use std::io::Result;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
+
+// SCSI device types. Copied almost as-is from kernel header.
+// https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/scsi/scsi_proto.h
+const SCSI_TYPE_DISK: u8 = 0x00;
+const SCSI_TYPE_TAPE: u8 = 0x01;
+const SCSI_TYPE_PRINTER: u8 = 0x02;
+/// HP scanners use this
+const SCSI_TYPE_PROCESSOR: u8 = 0x03;
+/// Treated as ROM by our system
+const SCSI_TYPE_WORM: u8 = 0x04;
+const SCSI_TYPE_ROM: u8 = 0x05;
+const SCSI_TYPE_SCANNER: u8 = 0x06;
+/// Magneto-optical disk - treated as TYPE_DISK
+const SCSI_TYPE_MOD: u8 = 0x07;
+const SCSI_TYPE_MEDIUM_CHANGER: u8 = 0x08;
+/// Communications device
+const SCSI_TYPE_COMM: u8 = 0x09;
+const SCSI_TYPE_RAID: u8 = 0x0c;
+/// Enclosure Services Device
+const SCSI_TYPE_ENCLOSURE: u8 = 0x0d;
+const SCSI_TYPE_RBC: u8 = 0x0e;
+const SCSI_TYPE_OSD: u8 = 0x11;
+const SCSI_TYPE_ZBC: u8 = 0x14;
+/// well-known logical unit
+const SCSI_TYPE_WLUN: u8 = 0x1e;
+const SCSI_TYPE_NO_LUN: u8 = 0x7f;
 
 pub type SlaveIter = Box<dyn Iterator<Item = Result<PathBuf>>>;
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[repr(u8)]
+pub enum ScsiDeviceType {
+    Disk = 0x00,
+    Tape = 0x01,
+    Printer = 0x02,
+    Processor = 0x03,
+    WriteOnceReadManyDevice = 0x04,
+    ReadOnlyMemory = 0x05,
+    Scanner = 0x06,
+    MagnetoOpticalDisk = 0x07,
+    MediumChanger = 0x08,
+    CommunicationsDevice = 0x09,
+    Raid = 0x0c,
+    Enclosure = 0x0d,
+    ReducedBlockCommandsDevice = 0x0e,
+    ObjectStorageDevice = 0x11,
+    ZonedBlockDevice = 0x14,
+    WellKnownLogicalUnit = 0x1e,
+    NoLogicalUnit = 0x7f,
+    Unknown(u8),
+}
+
+impl From<ScsiDeviceType> for u8 {
+    fn from(value: ScsiDeviceType) -> Self {
+        match value {
+            ScsiDeviceType::Disk => SCSI_TYPE_DISK,
+            ScsiDeviceType::Tape => SCSI_TYPE_TAPE,
+            ScsiDeviceType::Printer => SCSI_TYPE_PRINTER,
+            ScsiDeviceType::Processor => SCSI_TYPE_PROCESSOR,
+            ScsiDeviceType::WriteOnceReadManyDevice => SCSI_TYPE_WORM,
+            ScsiDeviceType::ReadOnlyMemory => SCSI_TYPE_ROM,
+            ScsiDeviceType::Scanner => SCSI_TYPE_SCANNER,
+            ScsiDeviceType::MagnetoOpticalDisk => SCSI_TYPE_MOD,
+            ScsiDeviceType::MediumChanger => SCSI_TYPE_MEDIUM_CHANGER,
+            ScsiDeviceType::CommunicationsDevice => SCSI_TYPE_COMM,
+            ScsiDeviceType::Raid => SCSI_TYPE_RAID,
+            ScsiDeviceType::Enclosure => SCSI_TYPE_ENCLOSURE,
+            ScsiDeviceType::ReducedBlockCommandsDevice => SCSI_TYPE_RBC,
+            ScsiDeviceType::ObjectStorageDevice => SCSI_TYPE_OSD,
+            ScsiDeviceType::ZonedBlockDevice => SCSI_TYPE_ZBC,
+            ScsiDeviceType::WellKnownLogicalUnit => SCSI_TYPE_WLUN,
+            ScsiDeviceType::NoLogicalUnit => SCSI_TYPE_NO_LUN,
+            ScsiDeviceType::Unknown(number) => number,
+        }
+    }
+}
+
+impl FromStr for ScsiDeviceType {
+    type Err = std::num::ParseIntError;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let number = s.parse::<u8>()?;
+        Ok(match number {
+            SCSI_TYPE_DISK => ScsiDeviceType::Disk,
+            SCSI_TYPE_TAPE => ScsiDeviceType::Tape,
+            SCSI_TYPE_PRINTER => ScsiDeviceType::Printer,
+            SCSI_TYPE_PROCESSOR => ScsiDeviceType::Processor,
+            SCSI_TYPE_WORM => ScsiDeviceType::WriteOnceReadManyDevice,
+            SCSI_TYPE_ROM => ScsiDeviceType::ReadOnlyMemory,
+            SCSI_TYPE_SCANNER => ScsiDeviceType::Scanner,
+            SCSI_TYPE_MOD => ScsiDeviceType::MagnetoOpticalDisk,
+            SCSI_TYPE_MEDIUM_CHANGER => ScsiDeviceType::MediumChanger,
+            SCSI_TYPE_COMM => ScsiDeviceType::CommunicationsDevice,
+            SCSI_TYPE_RAID => ScsiDeviceType::Raid,
+            SCSI_TYPE_ENCLOSURE => ScsiDeviceType::Enclosure,
+            SCSI_TYPE_RBC => ScsiDeviceType::ReducedBlockCommandsDevice,
+            SCSI_TYPE_OSD => ScsiDeviceType::ObjectStorageDevice,
+            SCSI_TYPE_ZBC => ScsiDeviceType::ZonedBlockDevice,
+            SCSI_TYPE_WLUN => ScsiDeviceType::WellKnownLogicalUnit,
+            SCSI_TYPE_NO_LUN => ScsiDeviceType::NoLogicalUnit,
+            number => ScsiDeviceType::Unknown(number),
+        })
+    }
+}
 
 /// A block device in /sys/class/block
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
@@ -134,6 +236,8 @@ impl Block {
     method!("device/serial", device_serial read_file String);
 
     method!("device/transport", device_transport read_file String);
+
+    method!("device/type", device_type_scsi parse_file ScsiDeviceType);
 
     // dm
 
