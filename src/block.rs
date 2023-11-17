@@ -131,6 +131,60 @@ impl Block {
 
     // integrity
 
+    // md
+
+    method!("md/array_size", md_array_size read_file String);
+
+    method!("md/array_state", md_array_state read_file String);
+
+    method!("md/chunk_size", md_chunk_size parse_file u64);
+
+    method!("md/component_size", md_component_size parse_file u64);
+
+    method!("md/degraded", md_degraded parse_file u8);
+
+    method!("md/layout", md_layout parse_file u64);
+
+    method!("md/level", md_level read_file String);
+
+    method!("md/metadata_version", md_metadata_version read_file String);
+
+    method!("md/mismatch_cnt", md_mismatch_count parse_file u64);
+
+    method!("md/preread_bypass_threshold", md_preread_bypass_threshold parse_file u64);
+
+    method!("md/raid_disks", md_raid_disks parse_file u64);
+
+    method!("md/reshape_position", md_reshape_position read_file String);
+
+    method!("md/resync_start", md_resync_start read_file String);
+
+    method!("md/safe_mode_delay", md_safe_mode_delay parse_file f64);
+
+    method!("md/stripe_cache_active", md_stripe_cache_active parse_file u8);
+
+    method!("md/stripe_cache_size", md_stripe_cache_size parse_file u64);
+
+    method!("md/suspend_hi", md_suspend_hi parse_file u64);
+
+    method!("md/suspend_lo", md_suspend_lo parse_file u64);
+
+    method!("md/sync_action", md_sync_action read_file String);
+
+    method!("md/sync_completed", md_sync_completed read_file String);
+
+    method!("md/sync_force_parallel", md_sync_force_parallel parse_file u8);
+
+    method!("md/sync_max", md_sync_max read_file String);
+
+    method!("md/sync_min", md_sync_min parse_file u64);
+
+    method!("md/sync_speed", md_sync_speed read_file String);
+
+    method!("md/sync_speed_max", md_sync_speed_max read_file String);
+
+    method!("md/sync_speed_min", md_sync_speed_min read_file String);
+
     // power
 
     // trace
